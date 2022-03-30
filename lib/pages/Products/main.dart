@@ -4,6 +4,7 @@ import 'package:supermarket_history/models/product.dart';
 import 'package:supermarket_history/pages/Products/bloc/products_bloc.dart';
 import 'package:supermarket_history/pages/Products/bloc/products_event.dart';
 import 'package:supermarket_history/pages/Products/bloc/products_state.dart';
+import 'package:supermarket_history/utils/date_formatters.dart';
 
 class ProductList extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
@@ -13,12 +14,14 @@ class ProductList extends StatelessWidget {
 
   final String shoppingListId;
   final String shoppingListTitle;
+  final String formattedCreationDate;
 
-  ProductList({
-    Key? key,
-    this.shoppingListId = '',
-    this.shoppingListTitle = '',
-  }) : super(key: key);
+  ProductList(
+      {Key? key,
+      this.shoppingListId = '',
+      this.shoppingListTitle = '',
+      this.formattedCreationDate = ''})
+      : super(key: key);
 
   void _onSave(BuildContext context) {
     final newProduct = Product(
@@ -106,7 +109,10 @@ class ProductList extends StatelessWidget {
         centerTitle: false,
         title: Wrap(
           direction: Axis.vertical,
-          children: [const Text('Created at 18.07'), Text(shoppingListTitle)],
+          children: [
+            Text('Criado em $formattedCreationDate'),
+            Text(shoppingListTitle)
+          ],
         ),
       ),
       body: BlocBuilder<ProductsBloc, ProductsState>(builder: (context, state) {

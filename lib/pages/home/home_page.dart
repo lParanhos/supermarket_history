@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supermarket_history/models/home_list.dart';
 import 'package:supermarket_history/pages/Products/main.dart';
 import 'package:supermarket_history/pages/home/bloc/home_event.dart';
+import 'package:supermarket_history/utils/date_formatters.dart';
 
 import 'bloc/home_bloc.dart';
 import 'bloc/home_state.dart';
@@ -52,13 +53,18 @@ class HomePage extends StatelessWidget {
   }
 
   void goToList(
-      BuildContext context, String shoppingListId, String shoppingListTitle) {
+    BuildContext context,
+    String shoppingListId,
+    String shoppingListTitle,
+    String formattedCreationDate,
+  ) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (BuildContext context) {
           return ProductList(
             shoppingListId: shoppingListId,
             shoppingListTitle: shoppingListTitle,
+            formattedCreationDate: formattedCreationDate,
           );
         },
         fullscreenDialog: true,
@@ -78,12 +84,17 @@ class HomePage extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             itemCount: state.list.length,
             itemBuilder: (context, index) {
+              final formattedCreationDate =
+                  formatToDDMMYYYY(state.list[index].createdAt);
+
               return ListItem(
                 state.list[index],
+                formattedCreationDate: formattedCreationDate,
                 onPress: () => goToList(
                   context,
                   state.list[index].id!,
                   state.list[index].title,
+                  formattedCreationDate,
                 ),
               );
             },
@@ -116,8 +127,10 @@ class HomePage extends StatelessWidget {
 class ListItem extends StatelessWidget {
   final HomeList item;
   final VoidCallback onPress;
+  final String formattedCreationDate;
 
-  const ListItem(this.item, {Key? key, required this.onPress})
+  const ListItem(this.item,
+      {Key? key, required this.onPress, required this.formattedCreationDate})
       : super(key: key);
 
   @override
@@ -131,7 +144,7 @@ class ListItem extends StatelessWidget {
         title: Wrap(
           children: [
             Text(item.title),
-            Text(' | ${item.createdAt}'),
+            Text(' | $formattedCreationDate'),
           ],
         ),
         subtitle: const Text('Items count'),
