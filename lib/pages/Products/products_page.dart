@@ -16,12 +16,12 @@ class ProductList extends StatelessWidget {
   final String shoppingListTitle;
   final String formattedCreationDate;
 
-  ProductList(
-      {Key? key,
-      this.shoppingListId = '',
-      this.shoppingListTitle = '',
-      this.formattedCreationDate = ''})
-      : super(key: key);
+  ProductList({
+    Key? key,
+    this.shoppingListId = '',
+    this.shoppingListTitle = '',
+    this.formattedCreationDate = '',
+  }) : super(key: key);
 
   void _onSave(BuildContext context) {
     final newProduct = Product(

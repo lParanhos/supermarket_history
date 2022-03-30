@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supermarket_history/models/home_list.dart';
 import 'package:supermarket_history/pages/Products/bloc/products_bloc.dart';
-import 'package:supermarket_history/pages/Products/main.dart';
+import 'package:supermarket_history/pages/Products/products_page.dart';
 import 'package:supermarket_history/pages/home/bloc/home_bloc.dart';
 import 'package:supermarket_history/pages/home/bloc/home_event.dart';
 import 'package:supermarket_history/pages/home/home_page.dart';
