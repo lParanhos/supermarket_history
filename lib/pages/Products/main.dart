@@ -1,32 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supermarket_history/models/product.dart';
+import 'package:supermarket_history/pages/Products/bloc/products_bloc.dart';
+import 'package:supermarket_history/pages/Products/bloc/products_event.dart';
+import 'package:supermarket_history/pages/Products/bloc/products_state.dart';
 
-class ShoppingList extends StatefulWidget {
-  const ShoppingList({Key? key}) : super(key: key);
-
-  @override
-  _ShoppingListState createState() => _ShoppingListState();
-}
-
-class _ShoppingListState extends State<ShoppingList> {
+class ProductList extends StatelessWidget {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
-  List<Product> _shoppingList = [];
+  final String shoppingListId;
+  final String shoppingListTitle;
 
-  void onSave() {
-    setState(() {
-      final newProduct = Product(
-        amount: double.tryParse(_amountController.text) ?? 0,
-        name: _nameController.text,
-        price: double.tryParse(_priceController.text) ?? 0,
-        unit: _unitController.text,
-      );
+  ProductList({
+    Key? key,
+    this.shoppingListId = '',
+    this.shoppingListTitle = '',
+  }) : super(key: key);
 
-      _shoppingList = [..._shoppingList, newProduct];
-    });
+  void _onSave(BuildContext context) {
+    final newProduct = Product(
+      shoppingListId: int.parse(shoppingListId),
+      amount: double.tryParse(_amountController.text) ?? 0,
+      name: _nameController.text,
+      price: double.tryParse(_priceController.text) ?? 0,
+      unit: _unitController.text,
+    );
+
+    BlocProvider.of<ProductsBloc>(context).add(ProductsAdd(newProduct));
+  }
+
+  void _onDelete(BuildContext context, int productId) {
+    BlocProvider.of<ProductsBloc>(context).add(ProductRemove(productId));
   }
 
   void _openCreateList(BuildContext context) {
@@ -41,7 +48,7 @@ class _ShoppingListState extends State<ShoppingList> {
               alignment: WrapAlignment.end,
               crossAxisAlignment: WrapCrossAlignment.end,
               children: <Widget>[
-                Text('Adicionar novo produto'),
+                const Text('Adicionar novo produto'),
                 TextFormField(
                   controller: _nameController,
                   decoration:
@@ -80,7 +87,9 @@ class _ShoppingListState extends State<ShoppingList> {
                     ),
                   ],
                 ),
-                OutlinedButton(onPressed: onSave, child: Text('Salvar'))
+                OutlinedButton(
+                    onPressed: () => _onSave(context),
+                    child: const Text('Salvar'))
               ],
             ),
           ),
@@ -91,54 +100,76 @@ class _ShoppingListState extends State<ShoppingList> {
 
   @override
   Widget build(BuildContext context) {
+    BlocProvider.of<ProductsBloc>(context).add(ProductsFetch(shoppingListId));
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
         title: Wrap(
           direction: Axis.vertical,
-          children: [Text('Created at 18.07'), Text('My title')],
+          children: [const Text('Created at 18.07'), Text(shoppingListTitle)],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [Text('Products'), Text(' (13)')],
-                ),
-                Row(
-                  children: [Text('Total: '), Text('R\$78.84')],
-                )
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 24.0),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Bolo de cenoura...',
-                  suffixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(
-                      Radius.circular(25.0),
+      body: BlocBuilder<ProductsBloc, ProductsState>(builder: (context, state) {
+        if (state is ProductsErrorState) {
+          return Center(
+            child: Text(state.message),
+          );
+        }
+
+        if (state is ProductsStateEmptyList) {
+          return const Center(
+            child: Text('Não há dados disponíveis.'),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Products'),
+                      Text(' (${state.productsAmount})')
+                    ],
+                  ),
+                  Row(
+                    children: [const Text('Total: '), Text(state.total)],
+                  )
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 24.0),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Bolo de cenoura...',
+                    suffixIcon: Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(
+                        Radius.circular(25.0),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _shoppingList.length,
-                itemBuilder: (ctx, index) {
-                  return ShoppingListItem(_shoppingList[index]);
-                },
+              Expanded(
+                child: ListView.builder(
+                  itemCount: state.props.length,
+                  itemBuilder: (ctx, index) {
+                    return ShoppingListItem(
+                      item: state.props[index],
+                      onDelete: _onDelete,
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        );
+      }),
+      /* , */
       floatingActionButton: FloatingActionButton(
         onPressed: () => _openCreateList(context),
         tooltip: 'Increment',
@@ -150,8 +181,13 @@ class _ShoppingListState extends State<ShoppingList> {
 
 class ShoppingListItem extends StatelessWidget {
   final Product item;
+  final Function(BuildContext, int) onDelete;
 
-  const ShoppingListItem(this.item, {Key? key}) : super(key: key);
+  const ShoppingListItem({
+    Key? key,
+    required this.item,
+    required this.onDelete,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +212,7 @@ class ShoppingListItem extends StatelessWidget {
           value: false,
         ),
         trailing: IconButton(
-          onPressed: () {},
+          onPressed: () => onDelete(context, item.id!),
           icon: Container(
             width: 40.0,
             height: 40.0,

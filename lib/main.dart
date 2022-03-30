@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:supermarket_history/bloc/home_bloc.dart';
-import 'package:supermarket_history/models/shopping_list.dart';
-import 'package:supermarket_history/pages/ShoppingList/main.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supermarket_history/models/home_list.dart';
+import 'package:supermarket_history/pages/Products/bloc/products_bloc.dart';
+import 'package:supermarket_history/pages/Products/main.dart';
+import 'package:supermarket_history/pages/home/bloc/home_bloc.dart';
+import 'package:supermarket_history/pages/home/bloc/home_event.dart';
+import 'package:supermarket_history/pages/home/home_page.dart';
+import 'package:supermarket_history/repositories/product_list_repository.dart';
+import 'package:supermarket_history/repositories/shopping_list_repository.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,21 +19,37 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => HomeBloc(
+            ShoppingListRepository(),
+          )..add(
+              HomeFetchList(),
+            ),
+        ),
+        BlocProvider(
+          create: (_) => ProductsBloc(
+            ProductListRepository(),
+          ),
+        )
+      ],
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        initialRoute: '/',
+        routes: {
+          '/': (ctx) => HomePage(),
+          'products': (ctx) => ProductList(),
+        },
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (ctx) => const MyHomePage(title: 'Flutter Demo Home Pages'),
-        'shopping_list_page': (ctx) => const ShoppingList(),
-      },
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
+/* class MyHomePage extends StatefulWidget {
   const MyHomePage({Key? key, required this.title}) : super(key: key);
   final String title;
 
@@ -41,11 +63,11 @@ class _MyHomePageState extends State<MyHomePage> {
   final HomeBloc _homeBloc = HomeBloc();
 
   void onSave() {
-    final ShoppingProductsList newList = ShoppingProductsList(
+    final HomeList newList = HomeList(
       title: _titleController.text,
       createdAt: DateTime.now().toString(),
     );
-    _homeBloc.createNewShoppingProductsList(newList);
+    //_homeBloc.createNewShoppingProductsList(newList);
   }
 
   void _openCreateList(BuildContext context) {
@@ -68,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   controller: _descriptionController,
                   decoration: const InputDecoration(label: Text('Descrição')),
                 ),
-                OutlinedButton(onPressed: onSave, child: Text('Salvar'))
+                OutlinedButton(onPressed: onSave, child: const Text('Salvar'))
               ],
             ),
           ),
@@ -96,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: StreamBuilder(
-            stream: _homeBloc.shoppingProductsListStream,
+            stream: _homeBloc.stream,
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.none:
@@ -143,45 +165,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-class ListItem extends StatelessWidget {
-  final ShoppingProductsList item;
-  final VoidCallback onPress;
-
-  const ListItem(this.item, {Key? key, required this.onPress})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15.0),
-        color: Colors.cyan.withOpacity(0.1),
-      ),
-      child: ListTile(
-        title: Wrap(
-          children: [
-            Text(item.title),
-            Text(' | ${item.createdAt}'),
-          ],
-        ),
-        subtitle: const Text('Items count'),
-        trailing: IconButton(
-          onPressed: onPress,
-          icon: Container(
-            width: 40.0,
-            height: 40.0,
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.circular(50.0),
-            ),
-            child: const Icon(
-              Icons.arrow_forward,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+ */
